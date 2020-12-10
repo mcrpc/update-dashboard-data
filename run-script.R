@@ -4,7 +4,7 @@
 # googlesheets4. uses tidyverse framework for wrangling data
 
 ######### CHANGE TO MOST RECENT ACS 5-YEAR RELEASE #########
-acsYear <- 2018
+acsYear <- 2019
 
 ######### CONTROLS WHETHER TABLES WRITE TO GSHEETS #########
 # set to TRUE if testing data retrieval & processing
@@ -390,7 +390,7 @@ median_val_map_new <- tbl_DP04_tract %>%
     GEOID = GEOID,
     Tract = NAME %>%
       word(1, sep = ", "),
-    Year = paste(as.numeric(Year) - 4, Year, sep = "-"), 
+    Year = paste(as.numeric(acsYear) - 4, acsYear, sep = "-"), 
     "Home Value" = estimate
   )
 
@@ -566,6 +566,7 @@ inc_burden_new <- tbl_B25106 %>%
     Year = paste(acsYear - 4, acsYear, sep = "-"),
     "Income Bracket" = label %>%
       word(4, sep = "!!") %>%
+      str_remove(":") %>%
       factor(levels = inc_burden_order),
     Estimate = estimate
   )

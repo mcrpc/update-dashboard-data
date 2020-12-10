@@ -83,6 +83,15 @@ tblList <- c(
       filter(str_starts(NAME, "Bloomington city|Normal town"))
   ),
   
+  # retrieve table DP04 at tract level for mapping
+  tbl_DP04_tract <- get_acs(
+    geography = "tract",
+    table = "DP04",
+    year = acsYear,
+    state = 17,
+    county = 113
+  ),
+  
   # retrieve table B25001
   tbl_B25001 <- bind_rows(
     tbl_B25001_county <- get_acs(
@@ -372,6 +381,40 @@ ifelse(
   write_sheet(median_val_combined, median_val_sheet, 1)
 )
 
+
+# Median Home Value (map) -------------------------------------------------
+# wrangle the data
+median_val_map_new <- tbl_DP04_tract %>%
+  filter(variable == "DP04_0089") %>%
+  transmute(
+    GEOID = GEOID,
+    Tract = NAME %>%
+      word(1, sep = ", "),
+    Year = paste(as.numeric(Year) - 4, Year, sep = "-"), 
+    "Home Value" = estimate
+  )
+
+# read google sheet
+median_val_map_sheet <- "1JGG4VMg50cAdQa0eIP_YYer7dzZXH1vQLefPpRQPyFg"
+
+median_val_map_old <- read_sheet(median_val_map_sheet, sheet = 3)
+
+# join wrangled data to google sheet data
+median_val_map_combined <- median_val_map_new %>%
+  bind_rows(median_val_map_old) %>%
+  arrange(desc(Year)) %>%
+  distinct()
+
+# write joined data to google sheet
+# OR, if testMode is TRUE, View() joined data
+ifelse(
+  testMode,
+  # if TRUE (testMode active)
+  View(median_val_map_combined),
+  # if FALSE (testMode not active)
+  write_sheet(median_val_map_combined, median_val_map_sheet, 3)
+)
+
 # Median Gross Rent -------------------------------------------------------
 # wrangle the data
 median_rent_new <- tbl_DP04 %>%
@@ -382,7 +425,7 @@ median_rent_new <- tbl_DP04 %>%
       str_remove(" city") %>%
       str_remove(" town") %>%
       str_replace("Illinois", "IL"),
-    Year = paste(acsYear - 4, acsYear, sep = "-"), 
+    Year = paste(acsYear - 4, acsYear, sep = "-"),
     "Gross Rent" = estimate
   )
 
@@ -406,6 +449,41 @@ ifelse(
   # if FALSE (testMode not active)
   write_sheet(median_rent_combined, median_rent_sheet, 2)
 )
+
+
+# Median Gross Rent (map) -------------------------------------------------
+# wrangle the data
+median_rent_map_new <- tbl_DP04_tract %>%
+  filter(variable == "DP04_0134") %>%
+  transmute(
+    GEOID = GEOID,
+    Tract = NAME %>%
+      word(1, sep = ", "),
+    Year = paste(acsYear - 4, acsYear, sep = "-"),
+    "Gross Rent" = estimate
+  )
+
+# read google sheet
+median_rent_map_sheet <- "1JGG4VMg50cAdQa0eIP_YYer7dzZXH1vQLefPpRQPyFg"
+
+median_rent_map_old <- read_sheet(median_rent_map_sheet, sheet = 4)
+
+# join wrangled data to google sheet data
+median_rent_map_combined <- median_rent_map_new %>%
+  bind_rows(median_rent_map_old) %>%
+  arrange(desc(Year)) %>%
+  distinct()
+
+# write joined data to google sheet
+# OR, if testMode is TRUE, View() joined data
+ifelse(
+  testMode,
+  # if TRUE (testMode active)
+  View(median_rent_map_combined),
+  # if FALSE (testMode not active)
+  write_sheet(median_rent_map_combined, median_rent_map_sheet, 4)
+)
+
 
 # Owner Occupied Home Values (Distribution) -------------------------------
 # establish preferred sorting order of rows
